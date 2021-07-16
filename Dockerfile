@@ -18,5 +18,6 @@ COPY --from=build /fauna2go /fauna2go
 EXPOSE 1000
 EXPOSE 8443
 EXPOSE 8084
+EXPOSE 8085
 
 CMD faunadb & /fauna2go

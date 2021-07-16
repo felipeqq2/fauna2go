@@ -2,81 +2,94 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	f "github.com/fauna/faunadb-go/v4/faunadb"
-	"github.com/google/uuid"
 )
 
-func init() {
-	time.Sleep(15 * time.Second)
-}
+const (
+	secretPort = "1000"
+	proxyPort  = "8085"
+)
 
 func main() {
+	time.Sleep(15 * time.Second)
+
 	client := f.NewFaunaClient("secret", f.Endpoint("http://localhost:8443"))
 
 	var secret string
 
 	if err := createDatabase(client, &secret); err != nil {
-		fatal(err)
+		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			fmt.Fprint(rw, secret)
-		} else {
-			if err := createDatabase(client, &secret); err != nil {
-				fatal(err)
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	go func() {
+		provideSecret(&secret, client)
+		wg.Done()
+	}()
+
+	go func() {
+		proxy(&secret)
+		wg.Done()
+	}()
+
+	wg.Wait()
+}
+
+func provideSecret(secret *string, client *f.FaunaClient) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			if err := createDatabase(client, secret); err != nil {
+				log.Fatal(err)
 			}
-			fmt.Fprint(rw, secret)
 		}
+		fmt.Fprint(rw, *secret)
 	})
 
-	fatal(http.ListenAndServe(":1000", nil))
+	log.Fatal(http.ListenAndServe(":"+secretPort, mux))
 }
 
-func createDatabase(client *f.FaunaClient, key *string) error {
-	fmt.Println("\nCreating new database")
+func proxy(secret *string) {
+	mux := http.NewServeMux()
 
-	db := uuid.NewString()
+	mux.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
+		client := &http.Client{}
 
-	dbRes, err := client.Query(f.CreateDatabase(f.Obj{"name": db}))
-	if err != nil {
-		return err
-	}
+		req, err := http.NewRequest(r.Method, "http://localhost:8084"+r.URL.Path, r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for k, v := range r.Header {
+			req.Header.Add(k, v[0])
+		}
+		req.Header.Set("Authorization", "Bearer "+*secret)
 
-	fmt.Printf("Database: %s\n", db)
+		res, err := client.Do(req)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	var ref f.RefV
-	if err := dbRes.At(f.ObjKey("ref")).Get(&ref); err != nil {
-		return err
-	}
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	keyRes, err := client.Query(f.CreateKey(f.Obj{"role": "admin", "database": ref}))
-	if err != nil {
-		return err
-	}
+		for k, v := range res.Header {
+			rw.Header().Set(k, v[0])
+		}
 
-	var secret string
-	if err := keyRes.At(f.ObjKey("secret")).Get(&secret); err != nil {
-		return err
-	}
-
-	fmt.Printf("Secret: %s\n", secret)
-
-	*key = secret
-
-	return nil
-}
-
-func fatal(err error) {
-	fmt.Printf("ERROR: %s\n", err.Error())
-
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		rw.WriteHeader(res.StatusCode)
+		rw.Write(body)
 	})
 
-	log.Fatal(http.ListenAndServe(":1000", nil))
+	log.Fatal(http.ListenAndServe(":"+proxyPort, mux))
 }
