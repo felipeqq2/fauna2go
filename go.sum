@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/fauna/faunadb-go/v4 v4.1.0 h1:NxM7NMiZ7ChS0ZhZXCkqQ0DpM91ths+oGd0ttJvATmU=
-github.com/fauna/faunadb-go/v4 v4.1.0/go.mod h1:1AqQgYx8IXSS8ZFj50GYnGqX9kOHH/+pKnbrp4bBYkg=
+github.com/fauna/faunadb-go/v4 v4.2.0 h1:DynTQrczLhbynSzcHBVDqIrnSrPy6wsds3xoPR/Uk9w=
+github.com/fauna/faunadb-go/v4 v4.2.0/go.mod h1:1AqQgYx8IXSS8ZFj50GYnGqX9kOHH/+pKnbrp4bBYkg=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
