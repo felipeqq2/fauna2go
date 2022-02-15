@@ -10,7 +10,7 @@ COPY *.go .
 RUN go build -o /fauna2go
 
 
-FROM fauna/faunadb:4.7.0
+FROM fauna/faunadb:4.9.0
 WORKDIR /faunadb
 
 COPY --from=build /fauna2go /fauna2go
