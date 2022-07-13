@@ -1,4 +1,4 @@
-FROM golang:1.18.1-buster AS build
+FROM golang:1.19rc2-buster AS build
 WORKDIR /app
 
 COPY go.mod .
